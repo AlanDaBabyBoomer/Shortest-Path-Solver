@@ -1,0 +1,34 @@
+// Thien Tran 1232642283
+#include <stdio.h>
+#include <stdlib.h>
+#include "stack.h"
+
+STACK* InitStack(int capacity) {
+    STACK* S = (STACK*)malloc(sizeof(STACK));
+    if (!S) { /* handle error */ }
+    S->items = (int*)malloc((capacity + 1) * sizeof(int)); // <-- This is required
+    if (!S->items) { /* handle error */ }
+    S->capacity = capacity;
+    S->top = 0;
+    return S;
+}
+
+void Push(STACK* S, int vertex_index) {
+    if (S->top >= S->capacity) {
+        fprintf(stderr, "Error: Stack overflow\n");
+        return; 
+    }
+    S->top++;
+    S->items[S->top] = vertex_index;
+}
+
+int Pop(STACK* S) {
+    if (S->top == 0) {
+        fprintf(stderr, "Error: Stack underflow (cannot pop from empty stack)\n");
+        return 0;
+    }
+    int item = S->items[S->top];
+    S->top--;
+
+    return item;
+}

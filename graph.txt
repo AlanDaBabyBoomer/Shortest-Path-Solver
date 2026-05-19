@@ -1,0 +1,246 @@
+// Thien Tran 1232642283
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <cfloat>
+#include "graph.h"
+#include "heap.h"
+#include "stack.h"
+
+pGRAPH InitGraph(int n, int m) {
+    pGRAPH G = (pGRAPH)malloc(sizeof(GRAPH));
+    G->vertices = n;
+    G->edges = m;
+    G->ADJ = (pNODE*)calloc(n + 1, sizeof(NODE));
+    G->V = (pVERTEX*)calloc(n + 1, sizeof(VERTEX));
+
+    if (G->V == NULL || G->ADJ == NULL) {
+        fprintf(stderr, "Error: Memory allocation failed for graph\n");
+        return NULL;
+    }
+    for (int i = 1; i <= n; i++) {
+        G->V[i] = (VERTEX*)calloc(1, sizeof(VERTEX));
+    }
+
+    
+    return G;   
+}
+
+//void AddEdge(pGRAPH G, int edge_index, int u, int v, double w, char* type, int flag) {
+//    pNODE newNode = (pNODE)calloc(1, sizeof(NODE));
+//    if (newNode == NULL) {
+//        return;
+//    }
+//    newNode->index = edge_index;
+//    newNode->u = u;
+//    newNode->v = v;
+//    newNode->w = w;
+//    newNode->next = NULL;
+//    pNODE currNode = G->ADJ[u];
+//    if (strcmp(type, "DirectedGraph")) {
+//        if (flag == 0) {
+//            newNode->next = currNode;
+//            G->ADJ[u] = newNode;
+//            return;
+//        }
+//        else {
+//            while (currNode != NULL && currNode->next != NULL) {
+//                currNode = currNode->next;
+//            }
+//            if (currNode == NULL) {
+//                G->ADJ[u] = newNode;
+//                return;
+//            }
+//            currNode->next = newNode;
+//            return;
+//        }
+//    } 
+//    else {
+//        pNODE newNode_v = newNode;
+//        newNode_v->u = newNode->v;
+//        newNode_v->v = newNode->u;
+//        pNODE currNode_v = G->ADJ[v];
+//        if (flag == 0) {
+//            newNode->next = currNode;
+//            G->ADJ[u] = newNode;
+//
+//            newNode_v->next = currNode_v;
+//            G->ADJ[v] = newNode_v;
+//
+//            return;
+//        }
+//        else {
+//            while (currNode != NULL && currNode->next != NULL) {
+//                currNode = currNode->next;
+//            }
+//            if (currNode == NULL) {
+//                G->ADJ[u] = newNode;
+//            }
+//            else {
+//                currNode->next = newNode;
+//            }
+//
+//            while (currNode_v != NULL && currNode_v->next != NULL) {
+//                currNode_v = currNode_v->next;
+//            }
+//            if (currNode_v == NULL) {
+//                G->ADJ[v] = newNode_v;
+//            }
+//            else {
+//                currNode_v->next = newNode_v;
+//            }
+//        }
+//    }
+//    return;
+//}
+
+pNODE CreateNode(int edgeIndex, int u, int v, double w) {
+    pNODE newNode = (pNODE)malloc(sizeof(NODE));
+    if (!newNode) {
+        fprintf(stderr, "Error: Memory allocation failed for node\n");
+        exit(1);
+    }
+    newNode->index = edgeIndex;
+    newNode->u = u;
+    newNode->v = v;
+    newNode->w = w;
+    newNode->next = NULL;
+    return newNode;
+}
+
+void InsertNode(pGRAPH G, int u, pNODE newNode, int flag) {
+    if (flag == 1) { 
+        if (G->ADJ[u] == NULL) {
+            G->ADJ[u] = newNode;
+        }
+        else {
+            pNODE curr = G->ADJ[u];
+            while (curr->next != NULL) {
+                curr = curr->next;
+            }
+            curr->next = newNode;
+        }
+    }
+    else { 
+        newNode->next = G->ADJ[u];
+        G->ADJ[u] = newNode;
+    }
+}
+
+void AddEdge(pGRAPH G, int edge_index, int u, int v, double w, char* graph_type, int flag) {
+    pNODE nodeUV = CreateNode(edge_index, u, v, w);
+    InsertNode(G, u, nodeUV, flag);
+
+    if (strcmp(graph_type, "UndirectedGraph") == 0) {
+        pNODE nodeVU = CreateNode(edge_index, v, u, w);
+        InsertNode(G, v, nodeVU, flag);
+    }
+}
+
+void PrintADJ(pGRAPH G) {
+    if (G == NULL || G->ADJ == NULL) {
+        fprintf(stderr, "Error: Graph is empty\n");
+        return;
+    }
+    for (int i = 1; i <= G->vertices; i++) {
+        fprintf(stdout, "ADJ[%d]:", i);
+        pNODE curr = G->ADJ[i];
+        if (curr == NULL) {
+            fprintf(stdout, "-->[]");
+        }
+        while (curr != NULL) {
+            fprintf(stdout, "-->[%d %d: %4.2lf]", curr->u, curr->v, curr->w);
+            curr = curr->next;
+        }
+        printf("\n");
+    }
+}
+
+void DijkstraAlgo(pGRAPH G, int s, int t) {
+    for (int i = 1; i <= G->vertices; i++) {
+        G->V[i]->index = i;
+        G->V[i]->key = DBL_MAX;
+        G->V[i]->pi = 0;
+        G->V[i]->color = WHITE;
+        G->V[i]->position = 0;
+    }
+    HEAP* pHeap = InitHeap(G->vertices);
+    G->V[s]->key = 0;
+    MinHeapInsert(pHeap, G->V[s]);
+    while (pHeap->size > 0) {
+        int u = ExtractMin(pHeap)->index;
+        if (u == t) return;
+        pNODE curr = G->ADJ[u];
+        if (curr == NULL) {
+            continue;
+        }
+        while (curr != NULL) {
+            if (G->V[curr->v]->color == WHITE) {
+                G->V[curr->v]->color = GRAY;
+                Relax(G, u, curr->v, curr->w);
+                MinHeapInsert(pHeap, G->V[curr->v]);
+            }
+            else if (G->V[curr->v]->color == GRAY) {
+                double key_before = G->V[curr->v]->key;
+                Relax(G, u, curr->v, curr->w);
+                if (G->V[curr->v]->key < key_before) {
+                    DecreaseKey(pHeap, G->V[curr->v]->position, G->V[curr->v]->key);
+                }
+            }
+            curr = curr->next;
+        }
+        G->V[u]->color = BLACK;
+    }
+}
+
+void Relax(pGRAPH G, int u, int v, double w) {
+    if (G->V[v]->key > G->V[u]->key + w) {
+        G->V[v]->key = G->V[u]->key + w;
+        G->V[v]->pi = u;
+    }
+}
+
+void PrintPath(pGRAPH G, int s, int t, int count) {
+    if (G->V[t]->pi == 0 && s != t) {
+        fprintf(stdout, "There is no path from %d to %d.\n", s, t);
+        return;
+    }
+
+    STACK* path = InitStack(G->vertices);
+
+    pVERTEX curr = G->V[t];
+    
+    while (curr != NULL) {
+        Push(path, curr->index);
+        if (curr->index == s) break;
+        curr = G->V[curr->pi];
+    }
+
+    fprintf(stdout, "The shortest path from %d to %d is:\n", s, t);
+
+    while (path->top != 0) {
+        int index = Pop(path);
+        if (path->top == 0) {
+            if (count >= 6) {
+                fprintf(stdout, "[%d:   %4.2lf].\n", index, G->V[index]->key);
+                return;
+            }
+            fprintf(stdout, "[%d:    %4.2lf].\n", index, G->V[index]->key);
+            return;
+        }
+        if (count >= 8 && path->top == 1) {
+            fprintf(stdout, "[%d:   %4.2lf]-->", index, G->V[index]->key);
+        }
+        else {
+            fprintf(stdout, "[%d:    %4.2lf]-->", index, G->V[index]->key);
+        }
+    }
+}
+
+void PrintLength(pGRAPH G, int s, int t) {
+    if (G->V[t]->pi == 0 && s != t) {
+        fprintf(stdout, "There is no path from %d to %d.\n", s, t);
+        return;
+    }
+    fprintf(stdout, "The length of the shortest path from %d to %d is:     %4.2lf\n", s, t, G->V[t]->key);
+}

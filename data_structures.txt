@@ -1,0 +1,49 @@
+// Thien Tran 1232642283
+#ifndef _data_structures_h
+#define _data_structures_h 1
+
+typedef enum { WHITE, GRAY, BLACK } COLOR;
+
+typedef struct TAG_VERTEX {
+	int index;
+	COLOR color;
+	double key;
+	int pi;
+	int position;
+}VERTEX;
+typedef VERTEX* pVERTEX;
+
+typedef struct TAG_NODE {
+	int index;
+	int u;
+	int v;
+	double w;
+	struct TAG_NODE* next;
+}NODE;
+typedef NODE* pNODE;
+
+typedef struct TAG_GRAPH {
+	int vertices; 
+	int edges; 
+	pVERTEX* V; 
+	pNODE* ADJ; 
+} GRAPH;
+typedef GRAPH* pGRAPH;
+
+typedef VERTEX ELEMENT;
+typedef ELEMENT* pELEMENT;
+
+typedef struct TAG_HEAP {
+	int capacity;
+	int size;
+	pELEMENT* H;
+}HEAP;
+
+
+typedef struct TAG_STACK {
+	int capacity; 
+	int top;      
+	int* items;  
+} STACK;
+
+#endif

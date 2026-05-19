@@ -1,0 +1,137 @@
+// Thien Tran 1232642283
+#include "heap.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <cfloat>
+
+int Parent(int i) { return i / 2; }
+int Left(int i) { return 2 * i; }
+int Right(int i) { return 2 * i + 1; }
+
+void Swap(HEAP* pHeap, int pos1, int pos2) {
+    pELEMENT temp = pHeap->H[pos1];
+
+    // 1. Swap pointers in the H array
+    pHeap->H[pos1] = pHeap->H[pos2];
+    pHeap->H[pos2] = temp;
+
+    pHeap->H[pos1]->position = pos1;
+    pHeap->H[pos2]->position = pos2;
+}
+
+
+HEAP* InitHeap(int n) {
+    HEAP* pHeap = (HEAP*)calloc(1, sizeof(HEAP));
+    pHeap->size = 0;
+    pHeap->capacity = n;
+
+    pHeap->H = (pELEMENT*)calloc(n + 1, sizeof(pELEMENT));
+    if (!pHeap->H) {
+        fprintf(stderr, "Error: calloc failed for heap H\n");
+        exit(1);
+    }
+
+    return pHeap;
+}
+
+
+void MinHeapify(HEAP* pHeap, int i) {
+    int left = Left(i);
+    int right = Right(i);
+    int smallest = i;
+
+    if (left <= pHeap->size && pHeap->H[left]->key < pHeap->H[smallest]->key) {
+        smallest = left;
+    }
+    if (right <= pHeap->size && pHeap->H[right]->key < pHeap->H[smallest]->key) {
+        smallest = right;
+    }
+
+    if (smallest != i) {
+        Swap(pHeap, i, smallest);
+        MinHeapify(pHeap, smallest); 
+    }
+}
+
+void BuildMinHeap(pGRAPH G, HEAP* pHeap) {
+    if (G->vertices == 0) return;
+
+    pHeap->size = G->vertices;
+    for (int i = 1; i <= G->vertices; i++) {
+        pHeap->H[i] = G->V[i];        
+        pHeap->H[i]->position = i;  
+    }
+
+    for (int i = pHeap->size / 2; i >= 1; i--) {
+        MinHeapify(pHeap, i);
+    }
+}
+
+pELEMENT ExtractMin(HEAP* pHeap) {
+    if (pHeap->size < 1) {
+        return NULL;
+    }
+
+    pELEMENT min = pHeap->H[1];
+
+    Swap(pHeap, 1, pHeap->size);
+
+    pHeap->size--; 
+
+    MinHeapify(pHeap, 1); 
+
+    min->position = 0; 
+    return min;
+}
+
+void DecreaseKey(HEAP* pHeap, int position, double newKey) {
+    if (position < 1 || position > pHeap->size) {
+        return;
+    }
+    if (newKey > pHeap->H[position]->key) {
+        fprintf(stderr, "Error: newKey is larger than current key\n");
+        return;
+    }
+
+    pHeap->H[position]->key = newKey;
+
+    int i = position;
+    int p = Parent(i);
+    while (i > 1 && pHeap->H[i]->key < pHeap->H[p]->key) {
+        Swap(pHeap, i, p);
+        i = p;
+        p = Parent(i);
+    }
+}
+
+void MinHeapInsert(HEAP* pHeap, pELEMENT newNode) {
+    if (pHeap->size == pHeap->capacity) {
+        fprintf(stderr, "Error: Out of capacity\n");
+        return;
+    }
+
+    pHeap->size++;
+    int position = pHeap->size;
+
+    pHeap->H[position] = newNode;
+    pHeap->H[position]->position = position; 
+
+    double newNode_key = newNode->key;
+
+    pHeap->H[position]->key = DBL_MAX;
+
+    DecreaseKey(pHeap, position, newNode_key);
+}
+
+
+void PrintHeap(HEAP* heap) {
+    if (heap == NULL || heap->H == NULL) {
+        fprintf(stderr, "Error: heap is NULL\n");
+        return;
+    }
+    printf("Capacity = %d, size = %d\n", heap->capacity, heap->size);
+    for (int i = 1; i <= heap->size; i++) {
+        printf("H[%d] = %lf\n", i, heap->H[i]->key);
+    }
+    return;
+}
